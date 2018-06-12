@@ -31,12 +31,10 @@ def main():
     filenames = []
     images = []
     dirname = sys.argv[1]
-    showImage = len(os.listdir(dirname)) == 1
+    showImage = len(os.listdir(dirname)) <= 4 # Only show images for small data sets
     options = ["Load", "Create"]
     res = prompt("Load pre-processed images or create new ones?", options)
     filetype = ".bmp" if res == "0" else ".pdf"
-    if res == "1" and not os.path.exists(dirname + "/images"):
-        os.makedirs(dirname + "/images")
     for file in pb.progressbar(os.listdir(dirname)):
         if file.endswith(filetype):
             filenames.append(os.path.join(dirname, file))
@@ -44,7 +42,7 @@ def main():
                 images.append(cv2.imread(filenames[-1]))
             elif filetype == ".pdf":
                 images.append(pproc.create_image(filenames[-1], display=showImage))
-                cv2.imwrite(dirname + "/images/{}.bmp".format(file), images[-1])
+                cv2.imwrite("{}.bmp".format(filenames[-1]), images[-1])
 
     # Extract feature vector
     options = ["ORB", "SIFT", "KAZE"]
