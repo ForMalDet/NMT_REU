@@ -10,3 +10,5 @@ eval_pdf.py
 * Python3
 * OpenCV
 * Progressbar
+* skimage
+* python3-tk (tkinter)

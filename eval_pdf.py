@@ -7,13 +7,20 @@ import progressbar as pb
 
 import preprocess as pproc
 import features as ft
+import trainer as tr
+
+def clear():
+    """Clear screen, return cursor to top left"""
+    sys.stdout.write('\033[2J')
+    sys.stdout.write('\033[H')
+    sys.stdout.flush()
 
 def showUsage():
     print("Usage: ./eval_pdf.py <directory>\n")
 
 def prompt(msg="Select an option:", options=[]):
     while True:
-        print(msg)
+        print("\n" + msg)
         count = 0
         for option in options:
             print("\t{}) {}".format(count, option))
@@ -25,6 +32,8 @@ def prompt(msg="Select an option:", options=[]):
             print("Please select a number between 0 and {}".format(len(options)-1))
 
 def main():
+    clear()
+
     # Pre-process PDFs
     if len(sys.argv) < 2:
         return showUsage()
@@ -45,10 +54,20 @@ def main():
                 cv2.imwrite("{}.bmp".format(filenames[-1]), images[-1])
 
     # Extract feature vector
-    options = ["ORB", "SIFT", "KAZE"]
+    options = ["ORB", "SIFT", "KAZE", "LBP"]
     res = prompt("Choose a feature selection algorithm:", options)
+    data = []
     for img in pb.progressbar(images):
-        fvector = ft.extract_features(img, type=options[int(res)], display=showImage)
+        data.append(ft.extract_features(img, type=options[int(res)], display=showImage))
+
+    # Create and train model
+    rows = []
+    columns = []
+    for row in range(len(images)):
+        rows.append(row)
+    for col in range(len(data[0])):
+        columns.append(col)
+    tr.train(data, rows, columns)
 
 if __name__ == "__main__":
     main()

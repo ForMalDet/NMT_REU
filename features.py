@@ -2,23 +2,29 @@
 import cv2
 import numpy as np
 
-# Feature extractor
-def extract_features(img, vector_size=32, type="ORB", display=False):
-    alg = None
-    descriptor_size = 0
-    if type == "ORB":
-        alg = cv2.ORB_create() 
-        descriptor_size = 32
-    elif type == "SIFT":
-        alg = cv2.xfeatures2d.SIFT_create() 
-        descriptor_size = 128
-    elif type == "KAZE":
-        alg = cv2.KAZE_create()
-        descriptor_size = 32
-    else:
-        print("ERROR: Type " + type + " not found (features.extract_features())\n")
-        return 1
+from skimage.feature import local_binary_pattern
 
+class LocalBinaryPatterns:
+    def __init__(self, numPoints, radius):
+        # store the number of points and radius
+        self.numPoints = numPoints
+        self.radius = radius
+ 
+    def describe(self, image, eps=1e-7):
+        # compute the LBP representation to build the histogram of patterns
+        lbp = local_binary_pattern(image, self.numPoints, self.radius, method="uniform")
+        (hist, _) = np.histogram(lbp.ravel(),
+            bins=np.arange(0, self.numPoints + 3),
+            range=(0, self.numPoints + 2))
+ 
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + eps)
+ 
+        # return the histogram of Local Binary Patterns
+        return hist
+
+def describe_keypoints(img, alg, vector_size, descriptor_size, display):
     # Finding image keypoints
     kps = alg.detect(img)
 
@@ -30,11 +36,35 @@ def extract_features(img, vector_size=32, type="ORB", display=False):
     dsc = dsc.flatten()
     dsc = np.divide(dsc, 256)
 
-    # Display image
+    # optional Display image
     if display:
-        img=cv2.drawKeypoints(img,kps,None)
+        img=cv2.drawKeypoints(img, kps, None)
         cv2.imshow('image', img)
         cv2.waitKey()
         cv2.destroyAllWindows()
+
+    return dsc
+
+# Feature extractor
+def extract_features(img, vector_size=32, type="ORB", display=False):
+    if type == "ORB":
+        alg = cv2.ORB_create() 
+        descriptor_size = 32
+        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
+    elif type == "SIFT":
+        alg = cv2.xfeatures2d.SIFT_create() 
+        descriptor_size = 128
+        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
+    elif type == "KAZE":
+        alg = cv2.KAZE_create()
+        descriptor_size = 32
+        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
+    elif type == "LBP":
+        alg = LocalBinaryPatterns(24, 8)
+        grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        dsc = alg.describe(grey)
+    else:
+        print("ERROR: Type " + type + " not found (features.extract_features())\n")
+        return 1
 
     return dsc
