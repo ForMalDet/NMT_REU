@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
+import gc
 import cv2
 import numpy as np
 import progressbar as pb
@@ -32,13 +33,16 @@ def prompt(msg="Select an option:", options=[]):
             print("Please select a number between 0 and {}".format(len(options)-1))
 
 def main():
+    gc.collect()
     clear()
 
-    # Pre-process PDFs
     if len(sys.argv) < 2:
         return showUsage()
-    filenames = []
+    
+    # Pre-process PDFs
+    files = []
     images = []
+    targets = []
     dirname = sys.argv[1]
     showImage = len(os.listdir(dirname)) <= 4 # Only show images for small data sets
     options = ["Load", "Create"]
@@ -46,12 +50,14 @@ def main():
     filetype = ".bmp" if res == "0" else ".pdf"
     for file in pb.progressbar(os.listdir(dirname)):
         if file.endswith(filetype):
-            filenames.append(os.path.join(dirname, file))
+            files.append(os.path.join(dirname, file))
             if filetype == ".bmp":
-                images.append(cv2.imread(filenames[-1]))
+                images.append(cv2.imread(files[-1]))
+                targets.append(file[:5]) # Either "CLEAN" or "INFEC"
             elif filetype == ".pdf":
-                images.append(pproc.create_image(filenames[-1], display=showImage))
-                cv2.imwrite("{}.bmp".format(filenames[-1]), images[-1])
+                images.append(pproc.create_image(files[-1], display=showImage))
+                cv2.imwrite("{}.bmp".format(files[-1]), images[-1])
+                targets.append(file[:5]) # Either "CLEAN" or "INFEC"
 
     # Extract feature vector
     options = ["ORB", "SIFT", "KAZE", "LBP"]
@@ -67,7 +73,7 @@ def main():
         rows.append(row)
     for col in range(len(data[0])):
         columns.append(col)
-    tr.train(data, rows, columns)
+    tr.train(data, rows, columns, targets)
 
 if __name__ == "__main__":
     main()
