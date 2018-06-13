@@ -8,6 +8,7 @@ import cv2
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
 from sklearn import svm
+from sklearn.metrics import confusion_matrix
 
 def train(data, targets):
     # Create DataFrame - This can be used for making nice plots of the data
@@ -18,11 +19,12 @@ def train(data, targets):
     #plt.show()
     
     # Split-out test dataset and randomize order
-    seed = 7
+    seed = 42
     validation_size = 0.20
     x_train, x_test, y_train, y_test = model_selection.train_test_split(data, targets, test_size=validation_size, random_state=seed)
 
-    clf = svm.SVC(gamma=0.001, C=100.)
+    clf = svm.SVC(C=100.)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
-    print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
+    print("\nAccuracy: {}".format(accuracy_score(y_test, y_pred)))
+    print("\nConfusion Matrix:\n{}".format(confusion_matrix(y_test, y_pred)))
