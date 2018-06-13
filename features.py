@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 import cv2
 import numpy as np
+import progressbar as pb
+
+import ui
 
 from skimage.feature import local_binary_pattern
 
@@ -46,25 +49,32 @@ def describe_keypoints(img, alg, vector_size, descriptor_size, display):
     return dsc
 
 # Feature extractor
-def extract_features(img, vector_size=32, type="ORB", display=False):
-    if type == "ORB":
-        alg = cv2.ORB_create() 
-        descriptor_size = 32
-        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
-    elif type == "SIFT":
-        alg = cv2.xfeatures2d.SIFT_create() 
-        descriptor_size = 128
-        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
-    elif type == "KAZE":
-        alg = cv2.KAZE_create()
-        descriptor_size = 32
-        dsc = describe_keypoints(img, alg, vector_size, descriptor_size, display)
-    elif type == "LBP":
-        alg = LocalBinaryPatterns(24, 8)
-        grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        dsc = alg.describe(grey)
-    else:
-        print("ERROR: Type " + type + " not found (features.extract_features())\n")
-        return 1
+def extract_features(images, vector_size=32):
+    # options = ["ORB", "SIFT", "KAZE", "LBP"]
+    options = ["LBP"]
+    res = ui.prompt("Choose a feature selection algorithm:", options)
+    type = options[int(res)]
 
-    return dsc
+    data = []
+    for img in pb.progressbar(images): # Process each image
+        if type == "ORB":              # Corner features
+            alg = cv2.ORB_create() 
+            descriptor_size = 32
+            data.append(describe_keypoints(img, alg, vector_size, descriptor_size, display))
+        elif type == "SIFT":           # Corner features (patented)
+            alg = cv2.xfeatures2d.SIFT_create() 
+            descriptor_size = 128
+            data.append(describe_keypoints(img, alg, vector_size, descriptor_size, display))
+        elif type == "KAZE":           # Corner features (patented)
+            alg = cv2.KAZE_create()
+            descriptor_size = 32
+            data.append(describe_keypoints(img, alg, vector_size, descriptor_size, display))
+        elif type == "LBP":            # Simple texture recognition
+            alg = LocalBinaryPatterns(24, 8)
+            grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            data.append(alg.describe(grey))
+        else:
+            print("ERROR: Type " + type + " not found (features.extract_features())\n")
+            return 1
+
+    return data

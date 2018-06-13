@@ -26,12 +26,8 @@ def main():
     dirname = sys.argv[1]
     images, targets = pproc.processPDFs(dirname)
 
-    # Extract feature vector
-    options = ["ORB", "SIFT", "KAZE", "LBP"]
-    res = ui.prompt("Choose a feature selection algorithm:", options)
-    data = []
-    for img in pb.progressbar(images):
-        data.append(ft.extract_features(img, type=options[int(res)], display=False))
+    # Extract feature vectors
+    data = ft.extract_features(images)
 
     # Create and train model
     rows = []
