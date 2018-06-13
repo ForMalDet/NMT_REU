@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
-import pandas
+# import matplotlib.pyplot as plt
+# import pandas
 
-from pandas.plotting import scatter_matrix 
+# from pandas.plotting import scatter_matrix 
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
 from sklearn import svm

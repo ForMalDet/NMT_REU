@@ -12,3 +12,4 @@ eval_pdf.py
 * Progressbar
 * skimage
 * python3-tk (tkinter)
+* sklearn
