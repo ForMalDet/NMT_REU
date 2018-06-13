@@ -1,8 +1,14 @@
 #!/usr/bin/python3
+import sys
+import os
 import cv2
 import numpy as np
+import progressbar as pb
+
+import ui
 
 # Calculate width based on pdf length
+# Return: width
 def image_width(length):
     width = 32
     if length < 10000:
@@ -23,8 +29,9 @@ def image_width(length):
         width = 1024
     return width
 
-# Create the pdf image
-def create_image(filename, display=False):
+# Create the BMP pdf image
+# Return: img
+def create_bmp(filename):
     pdf = open(filename, "rb").read()
 
     # Calculate height and width of image
@@ -43,10 +50,27 @@ def create_image(filename, display=False):
                 val = pdf[row * width + col]
             img[row, col] = [val, val, val]
 
-    # Display image
-    if display:
-        cv2.imshow('image', img)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-
     return img
+
+# Open PDFs or BMPs, creating images if prompted to
+# Return: (images[], targets[])
+def processPDFs(dirname):
+    images = []
+    targets = []
+
+    options = ["Load", "Create"]
+    res = ui.prompt("Load pre-processed images or create new ones?", options)
+
+    filetype = ".bmp" if res == "0" else ".pdf"
+    for file in pb.progressbar(os.listdir(dirname)): # Iterate through files
+        if file.endswith(filetype):                  # Check if right file type
+            filepath = os.path.join(dirname, file)
+            if filetype == ".bmp":
+                images.append(cv2.imread(filepath))
+                targets.append(file[:5])             # Either "CLEAN" or "INFEC"
+            elif filetype == ".pdf":
+                images.append(create_bmp(filepath))
+                cv2.imwrite("{}.bmp".format(filepath), images[-1])
+                targets.append(file[:5])            # Either "CLEAN" or "INFEC"
+
+    return images, targets
