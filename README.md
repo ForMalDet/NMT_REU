@@ -6,8 +6,8 @@ PDF Malware Detection
 ./main.py <dirname>
 ```
 
-**Note:** Within the directory, *<dirname>*, PDFs must be labeled as *CLEAN* or
-*INFEC* (i.e. "CLEAN_<filename>.pdf" or "INFEC_<filename>.pdf").
+**Note:** Within the directory, \<dirname\>, PDFs must be labeled as *CLEAN* or
+*INFEC* (i.e. "CLEAN_\<filename\>.pdf" or "INFEC_\<filename\>.pdf").
 
 ## Dependencies
 * Python3
