@@ -1,9 +1,9 @@
-eval_pdf.py
+PDF Malware Detection
 ===========
 
 ## Usage
 ```
-./eval_pdf.py <dirname>
+./main.py <dirname>
 ```
 
 ## Dependencies

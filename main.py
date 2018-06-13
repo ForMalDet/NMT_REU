@@ -8,7 +8,7 @@ import trainer as tr
 import ui
 
 def showUsage():
-    print("Usage: ./eval_pdf.py <directory>\n")
+    print("Usage: ./main.py <directory>\n")
 
 def main():
     gc.collect() # Garbage collect
