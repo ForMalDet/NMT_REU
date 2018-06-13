@@ -1,10 +1,6 @@
 #!/usr/bin/python3
 import sys
-import os
 import gc
-import cv2
-import numpy as np
-import progressbar as pb
 
 import preprocess as pproc
 import features as ft
@@ -29,14 +25,8 @@ def main():
     # Extract feature vectors
     data = ft.extract_features(images)
 
-    # Create and train model
-    rows = []
-    columns = []
-    for row in range(len(images)):
-        rows.append(row)
-    for col in range(len(data[0])):
-        columns.append(col)
-    tr.train(data, rows, columns, targets)
+    # Create, train, and evaluate model
+    tr.train(data, targets)
 
 if __name__ == "__main__":
     main()

@@ -15,8 +15,12 @@ def prompt(msg="Select an option:", options=[]):
             print("\t{}) {}".format(count, option))
             count += 1
         res = input(" > ")
-        if  len(options) == 0 or int(res) < len(options):
-            return res
-        else:
-            print("Please select a number between 0 and {}".format(len(options)-1))
+
+        try:
+            if  len(options) == 0 or int(res) < len(options):
+                return res
+            else:
+                print("Please select a number between 0 and {}".format(len(options)-1))
+        except:
+            print("Please provide a valid response")
 
