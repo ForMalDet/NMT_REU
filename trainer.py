@@ -6,17 +6,21 @@ from sklearn import model_selection
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
+from sklearn.model_selection import cross_val_score
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 import ui
 
 def train(data, targets):
-    options = ["Support Vector Machine", "Random Forest"]
+    options = ["Support Vector Machine", "Random Forest",
+            "Decision Tree Classifier"]
     res = ui.prompt("Choose a ML algorithm:", options)
     switch = {
         0: svm.SVC(C=100.),
         1: RandomForestClassifier(max_depth=2),
+        2: DecisionTreeClassifier()
     }
     clf = switch.get(int(res))
 
@@ -28,4 +32,5 @@ def train(data, targets):
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     print("\nAccuracy: {}".format(accuracy_score(y_test, y_pred)))
-    print("\nConfusion Matrix:\n{}".format(confusion_matrix(y_test, y_pred)))
+    print("Confusion Matrix:\n{}".format(confusion_matrix(y_test, y_pred)))
+    print("Cross Validation Score: {}".format(np.mean(cross_val_score(clf, x_train, y_train))))
