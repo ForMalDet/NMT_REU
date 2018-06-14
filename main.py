@@ -25,8 +25,14 @@ def main():
     # Extract feature vectors
     data = ft.extract_features(images)
 
-    # Create, train, and evaluate model
-    tr.train(data, targets)
+    # Create, train, and evaluate model (until user quits)
+    done = False
+    while not done:
+        tr.train(data, targets)
+        options = ["Try another model", "Quit"]
+        res = ui.prompt(options=options)
+        if res == "1":
+            done = True
 
 if __name__ == "__main__":
     main()
