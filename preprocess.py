@@ -48,7 +48,7 @@ def create_bmp(filename):
             val = 0
             if pos < int(len(pdf)): # Only get val if pos is within pdf length
                 val = pdf[row * width + col]
-            img[row, col] = [val, val, val]
+            img[row, col] = [val]
 
     return img
 

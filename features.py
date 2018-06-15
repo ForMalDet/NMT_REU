@@ -5,13 +5,25 @@ import progressbar as pb
 
 import ui
 
-from skimage.feature import local_binary_pattern
-from skimage.feature import ORB
+from scipy import ndimage as nd
+from skimage.util import img_as_float
 
-def histogram(image, nBins, range, eps=1e-7):
+from skimage.feature import local_binary_pattern
+from skimage.filters import gabor_kernel
+
+# Compute_feats for gabor filter
+def compute_feats(image, kernels):
+    feats = np.zeros((len(kernels), 2), dtype=np.double)
+    for k, kernel in enumerate(kernels):
+        filtered = nd.convolve(image, kernel, mode='wrap')
+        feats[k, 0] = filtered.mean()
+        feats[k, 1] = filtered.var()
+    return feats
+
+# Create histogram of pixel values in an image
+def histogram(image, nBins, range=None, eps=1e-7):
     (hist, _) = np.histogram(image.ravel(),
-        bins=np.arange(0, nBins),
-        range=(0, range))
+        bins=np.arange(0, nBins))
 
     # normalize the histogram
     hist = hist.astype("float")
@@ -19,6 +31,7 @@ def histogram(image, nBins, range, eps=1e-7):
 
     return hist
 
+# Simple LBP algorithm 
 class LocalBinaryPatterns:
     def __init__(self, numPoints, radius):
         # store the number of points and radius
@@ -31,6 +44,7 @@ class LocalBinaryPatterns:
         hist = histogram(lbp, self.numPoints+3, self.numPoints+2, eps)
         return hist
 
+# Create large description vector for keypoints in an image
 def describe_keypoints(img, alg, vector_size, descriptor_size, display=False):
     # Finding image keypoints
     kps = alg.detect(img, None)
@@ -58,7 +72,7 @@ def describe_keypoints(img, alg, vector_size, descriptor_size, display=False):
 
 # Feature extractor
 def extract_features(images, vector_size=32):
-    options = ["ORB", "SIFT", "LBP"]
+    options = ["ORB", "SIFT", "LBP", "Gabor"]
     res = ui.prompt("Choose a feature selection algorithm:", options)
     type = options[int(res)]
 
@@ -76,6 +90,26 @@ def extract_features(images, vector_size=32):
             alg = LocalBinaryPatterns(24, 8)
             grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             data.append(alg.describe(grey))
+        elif type == "Gabor":
+            # prepare filter bank kernels
+            kernels = []
+            for theta in range(4):
+                theta = theta / 4. * np.pi
+                for sigma in (1, 3):
+                    for frequency in (0.05, 0.25):
+                        kernel = np.real(gabor_kernel(frequency, theta=theta,
+                                                      sigma_x=sigma, sigma_y=sigma))
+                        kernels.append(kernel)
+
+            shrink = (slice(0, None, 3), slice(0, None, 3))
+            img_shrink= img_as_float(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))[shrink]
+
+            # prepare reference features
+            ref_feats = np.zeros((3, len(kernels), 2), dtype=np.double)
+            ref_feats[0, :, :] = compute_feats(img_shrink, kernels)
+
+            feats = compute_feats(nd.rotate(img_shrink, angle=190, reshape=False), kernels)
+            data.append(feats.flatten())
         else:
             print("ERROR: Type " + type + " not found (features.extract_features())\n")
             return 1
