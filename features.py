@@ -87,14 +87,14 @@ def extract_features(images, vector_size=32):
             descriptor_size = 128
             data.append(describe_keypoints(img, alg, vector_size, descriptor_size))
         elif type == "LBP":            # Simple texture recognition
-            alg = LocalBinaryPatterns(24, 8)
+            alg = LocalBinaryPatterns(32, 16)
             grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             data.append(alg.describe(grey))
         elif type == "Gabor":
             # prepare filter bank kernels
             kernels = []
             for theta in range(4):
-                theta = theta / 4. * np.pi
+                theta = theta / 8. * np.pi
                 for sigma in (1, 3):
                     for frequency in (0.05, 0.25):
                         kernel = np.real(gabor_kernel(frequency, theta=theta,
@@ -104,11 +104,7 @@ def extract_features(images, vector_size=32):
             shrink = (slice(0, None, 3), slice(0, None, 3))
             img_shrink= img_as_float(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))[shrink]
 
-            # prepare reference features
-            ref_feats = np.zeros((3, len(kernels), 2), dtype=np.double)
-            ref_feats[0, :, :] = compute_feats(img_shrink, kernels)
-
-            feats = compute_feats(nd.rotate(img_shrink, angle=190, reshape=False), kernels)
+            feats = compute_feats(img_shrink, kernels)
             data.append(feats.flatten())
         else:
             print("ERROR: Type " + type + " not found (features.extract_features())\n")
