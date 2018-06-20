@@ -7,6 +7,7 @@ import ui
 
 from scipy import ndimage as nd
 from skimage.util import img_as_float
+from skimage import exposure
 
 from skimage.feature import local_binary_pattern
 from skimage.filters import gabor_kernel
@@ -104,8 +105,9 @@ def extract_features(images, vector_size=32):
             shrink = (slice(0, None, 3), slice(0, None, 3))
             img_shrink= img_as_float(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))[shrink]
 
-            feats = compute_feats(img_shrink, kernels)
-            data.append(feats.flatten())
+            feats = compute_feats(img_shrink, kernels).flatten()
+            hist = exposure.histogram(img_shrink, nbins=16)
+            data.append(np.append(feats, hist))
         else:
             print("ERROR: Type " + type + " not found (features.extract_features())\n")
             return 1
