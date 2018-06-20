@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import progressbar as pb
 from math import isinf
+from skimage import exposure
 
 import ui
 
@@ -69,10 +70,10 @@ def create_markov(filename):
             p[row] /= sum
 
     # Normalize
-    #p += 0.00000000000000001
-    #p = np.divide(1, p)
+    p += 0.00000000000000001
+    p = np.divide(1, p)
     p = (1 / np.ndarray.max(p)) * p
-    #p = np.subtract(1, p)
+    p = np.subtract(1, p)
     p *= 255
 
     # Convert to RGB color spectrum
@@ -86,6 +87,7 @@ def create_markov(filename):
             img[row, col] = [val, val, val]
     #        else:
     #            img[row, col] = np.array([0, 511-val, val-256])
+    exposure.rescale_intensity(img)
     
     return img.astype(np.uint8)
 
