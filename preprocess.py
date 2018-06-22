@@ -70,10 +70,10 @@ def create_markov(filename):
             p[row] /= sum
 
     # Normalize
-    p += 0.00000000000000001
-    p = np.divide(1, p)
+    #p += 0.00000000000000001
+    #p = np.divide(1, p)
     p = (1 / np.ndarray.max(p)) * p
-    p = np.subtract(1, p)
+    #p = np.subtract(1, p)
     p *= 255
 
     # Convert to RGB color spectrum
@@ -100,7 +100,7 @@ def processPDFs(dirname):
     # Choose to load old images or create new ones
     options = ["Load", "Create"]
     res = ui.prompt("Load pre-processed images or create new ones?", options)
-    filetype = ".bmp" if res == "0" else ".pdf"
+    filetype = ".bmp" if res == "0" else ".file"
 
     # If creating new ones, select a type
     type = None
@@ -115,7 +115,7 @@ def processPDFs(dirname):
             if filetype == ".bmp":                   # We are just loading an image here
                 images.append(cv2.imread(filepath))
                 targets.append(file[:5])             # Either "CLEAN" or "INFEC"
-            elif filetype == ".pdf":                 # Creating new images here
+            elif filetype == ".file":                 # Creating new images here
                 if type == "Byte Map":
                     images.append(create_bmp(filepath))
                 elif type == "Markov Plot":
