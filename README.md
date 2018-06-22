@@ -14,5 +14,5 @@ PDF Malware Detection
 * OpenCV
 * Progressbar
 * skimage
-* python3-tk (tkinter)
 * sklearn
+* scikit-image (skimage)
