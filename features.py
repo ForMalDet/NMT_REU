@@ -11,6 +11,8 @@ from skimage import exposure
 
 from skimage.feature import local_binary_pattern
 from skimage.filters import gabor_kernel
+from skimage.filters.rank import entropy
+from skimage.morphology import disk
 
 # Compute_feats for gabor filter
 def compute_feats(image, kernels):
@@ -73,7 +75,7 @@ def describe_keypoints(img, alg, vector_size, descriptor_size, display=False):
 
 # Feature extractor
 def extract_features(images, vector_size=32):
-    options = ["ORB", "SIFT", "LBP", "Gabor"]
+    options = ["ORB", "SIFT", "LBP", "Gabor", "Entropy", "LBP and Entropy"]
     res = ui.prompt("Choose a feature selection algorithm:", options)
     type = options[int(res)]
 
@@ -108,6 +110,17 @@ def extract_features(images, vector_size=32):
             feats = compute_feats(img_shrink, kernels).flatten()
             hist = exposure.histogram(img_shrink, nbins=16)
             data.append(np.append(feats, hist))
+        elif type == "Entropy":
+            grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            grey = entropy(grey, disk(5))
+            hist = exposure.histogram(grey, nbins=16)[0]
+            data.append(hist)
+        elif type == "LBP and Entropy":
+            grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            alg = LocalBinaryPatterns(32, 16)
+            entropy_grey = entropy(grey, disk(5))
+            hist = exposure.histogram(entropy_grey, nbins=16)[0]
+            data.append(np.append(alg.describe(grey), hist))
         else:
             print("ERROR: Type " + type + " not found (features.extract_features())\n")
             return 1
