@@ -5,6 +5,7 @@ import cv2
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_recall_fscore_support
 
 from sklearn.model_selection import cross_val_score
 from sklearn import svm
@@ -29,10 +30,28 @@ def train(data, targets):
     # Split-out test dataset and randomize order
     seed = 42 # Seeded so as to create reproducible results
     validation_size = 0.20
-    x_train, x_test, y_train, y_test = model_selection.train_test_split(data, targets, test_size=validation_size, random_state=seed)
+    x_train, x_test, y_train, y_test = model_selection.train_test_split(
+            data, targets, test_size=validation_size, random_state=seed
+            )
 
+    # Fit model
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
-    print("\nAccuracy: {}".format(accuracy_score(y_test, y_pred)))
+
+    # Evaluate model
+    unique, counts = np.unique(y_pred, return_counts=True)
+    counts = dict(zip(unique, counts))
+    print("\nPredictions: {}".format(counts)) # Show counts of predictions
     print("Confusion Matrix:\n{}".format(confusion_matrix(y_test, y_pred)))
-    print("Cross Validation Score: {}".format(np.mean(cross_val_score(clf, x_train, y_train))))
+    print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
+    print("Cross Val Score (10 fold)(accuracy): {}".format(
+        np.mean(cross_val_score(
+            clf, x_train, y_train, scoring="accuracy", cv=10
+            ))
+        ))
+    precision, recall, fscore, _ = precision_recall_fscore_support(
+            y_test, y_pred
+            )
+    print("Precision: {}, Recall: {}, F1 Score: {}".format(
+        precision[1], recall[1], fscore[1]
+        ))
