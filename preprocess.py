@@ -1,126 +1,122 @@
-#!/usr/bin/python3
-import sys
-import os
-import cv2
-import numpy as np
-import progressbar as pb
-from math import isinf
-from skimage import exposure
+import sys # Command line arguments
+import os # Makes directories and detects filesize
+import numpy as np # Makes pixel array
+import math # Aids "length" variable
+import scipy.misc as smp # Required to export original png
+import skimage.feature.texture as txt # Required to export texture png
+import multiprocessing as mp # PARALELL PROCESSING
+import time
+import ui # For prompts
 
-import ui
+pagesize = 4096
 
-# Calculate width based on pdf length
-# Return: width
-def image_width(length):
-    width = 32
-    if length < 10000:
+def makebitarray(files):
+    pdfs = []
+    print("converting pdfs to byte arrays...")
+    for name in sys.argv:
+        with open(name, "rb") as f:
+            pdfs.append([name, list(f.read())])
+
+    return pdfs
+
+def getdims(f):
+    """ Processes image with, height, and size.
+    @param f is the file.
+    @return (width, height, filesize(bytes).
+    """
+    size = os.path.getsize(f) * .001
+    # width
+    # TODO: make this prettier
+    if (size <= 10):
         width = 32
-    elif length < 30000:
+    elif (10 < size <= 30):
         width = 64
-    elif length < 60000:
+    elif (30 < size <= 60):
         width = 128
-    elif length < 100000:
+    elif (60 < size <= 100):
         width = 256
-    elif length < 200000:
+    elif (100 < size <= 200):
         width = 384
-    elif length < 500000:
+    elif (200 < size <= 500):
         width = 512
-    elif length < 1000000:
+    elif (500 < size <= 1000):
         width = 768
     else:
         width = 1024
-    return width
 
-# Create the BMP pdf image
-# Return: img
-def create_bmp(filename):
-    pdf = open(filename, "rb").read()
+    # height
+    height = math.ceil(size*1000 // width) + 1
+    return (width, height, size*1000)
 
-    # Calculate height and width of image
-    width = image_width(len(pdf))
-    height = int(len(pdf) / width) + 1
-
-    # Initialize image
-    img = np.zeros((height, width, 3), np.uint8)
-
-    # Fill image
-    for row in range(height):
-        for col in range(width):
-            pos = row * width + col
-            val = 0
-            if pos < int(len(pdf)): # Only get val if pos is within pdf length
-                val = pdf[row * width + col]
-            img[row, col] = [val]
-
-    return img
-
-# Create the Markov Plot visualization of pdf
-# Return: img
-def create_markov(filename):
-    pdf = open(filename, "rb").read()
-    p = np.zeros(shape=(256, 256))
-    for i in range(len(pdf)-1):
-        row = pdf[i]
-        col = pdf[i+1]
-        p[row, col] += 1
-
-    for row in range(256):
-        sum = np.sum(p[row])
-        if sum != 0:
-            p[row] /= sum
-
-    # Normalize
-    p += 0.00000000000000001
-    p = np.divide(1, p)
-    p = (1 / np.ndarray.max(p)) * p
-    p = np.subtract(1, p)
-    p *= 255
-
-    # Convert to RGB color spectrum
-    img = np.zeros(shape=(256, 256, 3))
-    for row in range(256):
-        for col in range(256):
-            val = p[row, col]
-            val = val if not isinf(val) else 0
-    #        if val < 256:
-    #            img[row, col] = np.array([255-val, val, 0])
-            img[row, col] = [val, val, val]
-    #        else:
-    #            img[row, col] = np.array([0, 511-val, val-256])
-    exposure.rescale_intensity(img)
+def preprocess(pdf):
+    dimensions = getdims(pdf[0])
     
-    return img.astype(np.uint8)
+    # Creating Image-----------------------------------------------------------
+    data = np.array(pdf[1])
+    data = np.pad(
+        data, (0, dimensions[0]-(len(data)%dimensions[0])), 'constant')
+    data = np.reshape(data, (-1, dimensions[0]))
 
-# Open PDFs or BMPs, creating images if prompted to
-# Return: (images[], targets[])
-def processPDFs(dirname):
-    images = []
-    targets = []
+    # Saving Image-------------------------------------------------------------
+    img = smp.toimage(data)
+    smp.imsave(pdf[0]+"(original).png", img)
 
-    # Choose to load old images or create new ones
-    options = ["Load", "Create"]
-    res = ui.prompt("Load pre-processed images or create new ones?", options)
-    filetype = ".bmp" if res == "0" else ".pdf"
 
-    # If creating new ones, select a type
-    type = None
-    if options[int(res)] == "Create":
-        options = ["Byte Map", "Markov Plot"]
-        res = ui.prompt(options=options)
-        type = options[int(res)]
+def mode1(args):
+    sys.argv = sys.argv[1:] # Stripping the name of this file -----------------
 
-    for file in pb.progressbar(os.listdir(dirname)): # Iterate through files
-        if file.endswith(filetype):                  # Check if right file type
-            filepath = os.path.join(dirname, file)
-            if filetype == ".bmp":                   # We are just loading an image here
-                images.append(cv2.imread(filepath))
-                targets.append(file[:5])             # Either "CLEAN" or "INFEC"
-            elif filetype == ".pdf":                 # Creating new images here
-                if type == "Byte Map":
-                    images.append(create_bmp(filepath))
-                elif type == "Markov Plot":
-                    images.append(create_markov(filepath))
-                cv2.imwrite("{}.bmp".format(filepath), images[-1])
-                targets.append(file[:5])            # Either "CLEAN" or "INFEC"
+    start = time.time()
 
+    # If argument was a directory and not the files in the directory
+    # Ex: /root/thing/ instead of /root/thing/*
+    if len(sys.argv) == 1 and sys.argv[0][-1] == "/": 
+        directory = sys.argv[0].split("/")[0]
+        sys.argv = [directory + "/" + item for item in os.listdir(sys.argv[0])]
+
+    pdfs = makebitarray(sys.argv)
+
+    # Parallel processing the image creation process. -------------------------
+    print("Creating images...")
+    pool = mp.Pool(mp.cpu_count()-1)
+    if(len(pdfs) > 1000): # Have to break up, otherwise too much RAM
+        tmp = 0
+        for i in range(1000, len(pdfs), 1000):
+            pool.map(preprocess, pdfs[tmp:i])
+            tmp = i
+        pool.map(preprocess, pdfs[tmp:])
+    else:
+        pool.map(preprocess, pdfs)
+
+    # Printing time -----------------------------------------------------------
+    end = time.time()
+    print("\nConverted {0} files in {1} seconds"
+        .format(len(sys.argv), end-start ))
+
+    # Return Values -----------------------------------------------------------
+    images = [np.array(item[1]) for item in pdfs]
+    print(type(images))
+    targets = [item[0] for item in pdfs]
     return images, targets
+
+
+def mode2(args):
+    pass
+
+def processPDFs(sys):
+
+    """
+    if not len(sys.argv):
+        print("At least 1 pdf filename required")
+        quit()
+    """
+
+    options = ["Load", "Create"]
+    mode = ui.prompt("Load pre-processed images or create new ones?", options)
+
+    if int(mode):
+        return mode1(sys.argv)
+    elif not int(mode):
+        mode2(sys.argv)
+
+if __name__ == "__main__":
+    processPDFs()
