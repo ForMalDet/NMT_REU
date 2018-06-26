@@ -7,11 +7,13 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support
 
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.metrics import precision_score
 
 import ui
 
@@ -38,20 +40,18 @@ def train(data, targets):
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
 
-    # Evaluate model
+    # Show confusion matrix for this fit
     unique, counts = np.unique(y_pred, return_counts=True)
     counts = dict(zip(unique, counts))
-    print("\nPredictions: {}".format(counts)) # Show counts of predictions
+    print("\nPredictions: {}".format(counts))
     print("Confusion Matrix:\n{}".format(confusion_matrix(y_test, y_pred)))
-    print("Accuracy: {}".format(accuracy_score(y_test, y_pred)))
-    print("Cross Val Score (10 fold)(accuracy): {}".format(
-        np.mean(cross_val_score(
-            clf, x_train, y_train, scoring="accuracy", cv=10
-            ))
-        ))
-    precision, recall, fscore, _ = precision_recall_fscore_support(
-            y_test, y_pred
-            )
-    print("Precision: {}, Recall: {}, F1 Score: {}".format(
-        precision[1], recall[1], fscore[1]
-        ))
+
+    # Cross validate and calculate scores
+    scoring = ["accuracy", "precision", "recall", "f1"] # Choose scoring methods
+    targets = [val == "INFEC" for val in targets] # Set INFEC as positive val
+    scores = cross_validate(clf, data, targets, scoring=scoring, cv=5)
+    print("Scores calculated from 5-fold cross validation:")
+    print("Accuracy:  {},\t{}".format(round(np.mean(scores["test_accuracy"]),  4), scores["test_accuracy"]))
+    print("Precision: {},\t{}".format(round(np.mean(scores["test_precision"]), 4), scores["test_precision"]))
+    print("Recall:    {},\t{}".format(round(np.mean(scores["test_recall"]),    4), scores["test_recall"]))
+    print("F1:        {},\t{}".format(round(np.mean(scores["test_f1"]),        4), scores["test_f1"]))
