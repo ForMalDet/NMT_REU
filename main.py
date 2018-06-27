@@ -38,6 +38,7 @@ def main():
                 doneExtracting = True
             elif options[int(res)] == "Extract new features":
                 doneTraining = True
+        gc.collect() # Garbage collect
 
 if __name__ == "__main__":
     main()
