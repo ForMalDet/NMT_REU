@@ -125,4 +125,4 @@ def extract_features(images, vector_size=32):
             print("ERROR: Type " + type + " not found (features.extract_features())\n")
             return 1
 
-    return data
+    return data, type
