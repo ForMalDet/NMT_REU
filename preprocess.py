@@ -102,12 +102,15 @@ def processPDFs(dirname):
     res = ui.prompt("Load pre-processed images or create new ones?", options)
     filetype = ".bmp" if res == "0" else ".file"
 
-    # If creating new ones, select a type
-    type = None
+    # Select a type
+    message = None
     if options[int(res)] == "Create":
-        options = ["Byte Map", "Markov Plot"]
-        res = ui.prompt(options=options)
-        type = options[int(res)]
+        message = "Select an visualization type:"
+    else:
+        message = "Which type of plot are these images?"
+    options = ["Byte Map", "Markov Plot"]
+    res = ui.prompt(message, options)
+    type = options[int(res)]
 
     for file in pb.progressbar(os.listdir(dirname)): # Iterate through files
         if file.endswith(filetype):                  # Check if right file type
@@ -123,4 +126,4 @@ def processPDFs(dirname):
                 cv2.imwrite("{}.bmp".format(filepath), images[-1])
                 targets.append(file[:5])            # Either "CLEAN" or "INFEC"
 
-    return images, targets
+    return images, targets, type

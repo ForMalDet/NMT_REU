@@ -47,10 +47,11 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     plt.legend(loc="best")
     return plt
 
-def train(data, targets):
+def train(data, targets, plotType, ftType):
     options = ["Support Vector Machine", "Random Forest",
             "Decision Tree Classifier", "KNN"]
     res = ui.prompt("Choose a ML algorithm:", options)
+    clfType = options[int(res)]
     switch = {
         0: svm.SVC(C=100.),
         1: RandomForestClassifier(max_depth=2),
@@ -87,6 +88,10 @@ def train(data, targets):
     print("F1:        {},\t{}".format(round(np.mean(scores["test_f1"]),        4), scores["test_f1"]))
 
     # Plot Learning Curve
-    title = "Learning Curve ({})".format(options[int(res)])
-    plot_learning_curve(clf, title, data, targets, ylim=(0.7, 1.01), cv=5, n_jobs=4)
-    plt.show()
+    options = ["Yes", "No"]
+    res = ui.prompt("Plot learning curve?", options)
+    if options[int(res)] == "Yes":
+        title = "Learning Curve ({}, {}, {})".format(clfType, ftType, plotType)
+        # plot_learning_curve(clf, title, data, targets, ylim=(0.7, 1.01), cv=5, n_jobs=4)
+        plot_learning_curve(clf, title, data, targets, cv=5, n_jobs=4)
+        plt.show()

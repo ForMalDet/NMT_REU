@@ -17,20 +17,19 @@ def main():
     if len(sys.argv) < 2:
         return showUsage()
     ui.clear()
-    
     # Pre-process PDFs
     dirname = sys.argv[1]
-    images, targets = pproc.processPDFs(dirname)
+    images, targets, plotType = pproc.processPDFs(dirname)
 
     # Extract feature vectors (until user quits)
     doneExtracting = False
     while not doneExtracting:
-        data = ft.extract_features(images)
+        data, ftType = ft.extract_features(images)
 
         # Create, train, and evaluate model (until user quits)
         doneTraining = False
         while not doneTraining:
-            tr.train(data, targets)
+            tr.train(data, targets, plotType, ftType)
             options = ["Try another model", "Extract new features", "Quit"]
             res = ui.prompt(options=options)
             if options[int(res)] == "Quit":
